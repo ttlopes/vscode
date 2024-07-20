@@ -64,6 +64,34 @@ export class GotoLineQuickAccessProvider extends AbstractGotoLineQuickAccessProv
 			super.gotoLocation(context, options);
 		}
 	}
+
+	// NEW METHOD ADDED TO HANDLE RELATIVE LINE INPUT
+	protected parseInput(input: string): [number, number | undefined] {
+		const currentEditor = this.activeTextEditorControl;
+		if (!currentEditor) {
+			throw new Error('No active editor');
+		}
+		const currentPosition = currentEditor.getSelection()?.getStartPosition();
+		if (!currentPosition) {
+			throw new Error('No current position');
+		}
+
+		// Check if the input is relative
+		if (input.startsWith(':c+') || input.startsWith(':c-')) {
+			const relativeLine = parseInt(input.substring(2), 10);
+			const line = currentPosition.lineNumber + relativeLine;
+			return [line, undefined];
+		}
+
+		// Default to the original implementation
+		const match = /^(\d+)(?:\s+(\d+))?$/.exec(input);
+		if (!match) {
+			throw new Error('Invalid input');
+		}
+		const line = parseInt(match[1], 10);
+		const column = match[2] ? parseInt(match[2], 10) : undefined;
+		return [line, column];
+	}
 }
 
 class GotoLineAction extends Action2 {
